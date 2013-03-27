@@ -1,5 +1,5 @@
-from pyglet import app, window, text, clock
-from pyglet.window import key, event
+from pyglet import app, window, text, clock, event
+from pyglet.window import key
 
 
 class Gui():
@@ -7,27 +7,32 @@ class Gui():
         self.show = False
         self.layout = layout
 
-    def info(self):
-        def fps(self):
-            return 'FPS: %i' % clock.get_fps()
+    def fps(self):
+        return 'FPS: %i' % clock.get_fps()
 
-        def toogle(self, option):
-            if hasattr(self.__class__, option):
-                self.option = not self.option
+    def toogle(self, option):
+        if hasattr(self.__class__, option):
+            self.option = not self.option
 
-        def check(self, option):
-            if hasattr(self.__class__, option):
-                return bool(self.option)
+    @classmethod
+    def _get(cls, option):
+        return getattr(cls, option)
+        #print self.show
 
-        def update(self):
-            self.layout.begin_update()
-            self.layout.text = self.info.fps()
-            self.layout.end_update()
+    def _set(self, option, bool):
+        if hasattr(self.__class__, option):
+            self.option = bool
+
+    def update(self):
+        self.layout.begin_update()
+        self.layout.text = self.info.fps()
+        self.layout.end_update()
 
     def draw(self):
         if self.show:
-            self.info.update()
+            self.update()
             self.layout.draw()
+
 
 win = window.Window(width=800,
                     height=600,
@@ -35,13 +40,12 @@ win = window.Window(width=800,
                     caption="Test")
 
 event_loop = app.EventLoop()
-gui = Gui()
-gui.layout = text.Label(font_name='arial',
-                        font_size=20,
-                        color=(255, 255, 255, 255),
-                        anchor_x='left',
-                        anchor_y='center',
-                        x=1, y=15)
+gui = Gui(layout=text.Label(font_name='arial',
+                            font_size=20,
+                            color=(255, 255, 255, 255),
+                            anchor_x='left',
+                            anchor_y='center',
+                            x=1, y=15))
 
 clock.set_fps_limit(60)
 
@@ -50,8 +54,8 @@ clock.set_fps_limit(60)
 def on_draw():
     win.clear()
     gui.draw()
-    asd(gui.info('fps'))
-    asd(str(gui.info('c')))
+    asd(gui.fps())
+    asd(gui._get('show'))
     asd('draw')
 
 
@@ -59,7 +63,7 @@ def on_draw():
 def on_key_press(symbol, modifiers):
     if symbol == key.SPACE:
         asd('space')
-        gui.info('t')
+        gui.toogle('show')
 #win.push_handlers(event.WindowEventLogger())
 
 
