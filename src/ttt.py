@@ -1,4 +1,4 @@
- 
+
 from pyglet import app, window, text, clock
 from pyglet.window import key, event
 
@@ -8,7 +8,7 @@ class Gui():
         self.show = False
         self.layout = layout
 
-    class info(cls):
+    class info():
         def fps(self):
             return 'FPS: %i' % clock.get_fps()
 
@@ -51,8 +51,8 @@ clock.set_fps_limit(60)
 def on_draw():
     win.clear()
     gui.draw()
-    asd(gui.info('fps'))
-    asd(str(gui.info('c')))
+    asd(gui.info.fps)
+    asd(str(gui.info.check))
     asd('draw')
 
 
@@ -60,7 +60,7 @@ def on_draw():
 def on_key_press(symbol, modifiers):
     if symbol == key.SPACE:
         asd('space')
-        gui.info('t')
+        gui.info.toogle
 #win.push_handlers(event.WindowEventLogger())
 
 
