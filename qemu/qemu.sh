@@ -6,26 +6,40 @@ depend() {
 }
 
 start() {
+    _checks
     _modules start
     _setup start
     _firewall start
 }
 
 stop() {
-    _modules stop
     _setup stop
+    mark_service_stopped qemu
+    /etc/init.d/net.br0 stop
+    mark_service_stopping qemu
+    _modules stop
     _firewall stop
 }
 
 restart() {
-    stop
-    start
+    pass
 }
 
 _checks() {
     # TODO
-    #  up, down, inuse
-    #  parse cfgs
+    #  2up, down, inuse
+    #  1parse cfgs
+#    /usr/bin/lsof /dev/kvm
+#    checkpath -f -m 660 -o root:kvm /dev/kvm
+#    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/tap0
+#    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/tap1
+#    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/br0
+    pass
+}
+
+_qemu() {
+    # TODO
+    #  start-stop-deamon ...
     pass
 }
 
@@ -114,7 +128,7 @@ _firewall() {
         msg_=(disallow off)
     fi
 
-    ebegin "Turning ${msg_[1]} firewall"
+    ebegin "Turning ${msg_[1]} firewall rueles"
 
     iptables -t nat ${cmd_[0]} POSTROUTING -o ${IF_WAN} -s ${NT_LAN} -j MASQUERADE
     eend $? "Failed to ${msg_[0]} masquerade (${IF_WAN})"
