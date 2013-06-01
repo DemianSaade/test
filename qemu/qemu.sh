@@ -1,7 +1,15 @@
 #!/sbin/runscript
 # TODO verbose
+#  _checks()
+#  _qemu()
+#  depend()
+#  _ifaces()
+#  _services()
+#  _configs()
 
 depend() {
+    # TODO
+    #  move ifs deps to _ifaces()
     need net.tap0 net.tap1
 }
 
@@ -14,9 +22,9 @@ start() {
 
 stop() {
     _setup stop
-    mark_service_stopped qemu
+    mark_service_stopped $RC_SVCENAME
     /etc/init.d/net.br0 stop
-    mark_service_stopping qemu
+    mark_service_stopping $RC_SVCENAME
     _modules stop
     _firewall stop
 }
@@ -25,21 +33,43 @@ restart() {
     pass
 }
 
-_checks() {
+_configs() {
     # TODO
-    #  2up, down, inuse
-    #  1parse cfgs
+    #  chmod /etc/conf/qemu -> cfg
+    #  parse cfgs
+    #  make list to
+    pass
+}
+
+_checks() {
+
+    #  do _checks from
 #    /usr/bin/lsof /dev/kvm
 #    checkpath -f -m 660 -o root:kvm /dev/kvm
 #    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/tap0
 #    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/tap1
 #    checkpath -d -m 755 -o root:root /sys/devices/virtual/net/br0
+#    checkpath -f -m 660 -o root:kvm /path-to-/img.qcow2
+    pass
+}
+
+_ifaces() {
+    # TODO
+    #  [create, del, insuse] taps -> cfg
+    #   """ /etc/init.d/net.[tap#, br#] """
+    pass
+}
+
+_services() {
+    # TODO
+    #  talk to {cifs, nfs} -> cfg
+    #   """ deps oslt """
     pass
 }
 
 _qemu() {
     # TODO
-    #  start-stop-deamon ...
+    #  start-stop-deamon ${VM.sh_lst} ->if (^+x VM*.sh^)<-
     pass
 }
 
