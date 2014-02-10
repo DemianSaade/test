@@ -1,0 +1,85 @@
+#!/bin/bash
+#set -e
+set -o noclobber
+trap 'rm -f $fpid' 0
+trap 'echo "error $? by $BASH_COMMAND on line $LINENO"' ERR
+
+CHROOT_DIR=/var/games/steam
+PID_DIR=/var/run
+STEAM_APPS=/mnt/home/gentoo/demian/.local/share/Steam/SteamApps
+ret_pulse_system_wide____="nonoise"
+
+[ "$USER" != "root" ] && echo "call to root" && exit 1
+
+fpid="${PID_DIR}/$(basename $0).pid"
+if [ ! -f "$fpid" ]; then
+    echo "$$" > "$fpid"
+else
+    pid=$(< $fpid)
+    echo "error: fpid (${fpid}) already exists."
+    echo "maybe created by pid:$pid name:$(< /proc/$pid/cmdline)"
+    exit 1
+fi
+
+ps -u pulse > /dev/null 2>&1
+if [ $? -eq 1 ]; then
+    pulseaudio --system --daemonize=true --high-priority=true --log-target=syslog
+    ret_pulse_system_wide____="true"
+else
+    ret_pulse_system_wide____="true"
+fi
+
+_users=$(users |tr " " "\n" |sort |uniq)
+for user in $_users; do
+    if [ "$user" != "root" ]; then
+        su $user -c "pulseaudio -k"
+    fi
+done
+
+mount -t devtmpfs -o rw,nosuid,relatime,size=10240k,nr_inodes=503133,mode=755 chudev "${CHROOT_DIR}/dev"
+mount -t devpts -o rw,relatime,gid=5,mode=620,ptmxmode=000 chdevpts "${CHROOT_DIR}/dev/pts"
+mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime chshm "${CHROOT_DIR}/dev/shm"
+mount -t proc chproc "${CHROOT_DIR}/proc"
+mount -t sysfs -o rw,nosuid,nodev,noexec,relatime chsysfs "${CHROOT_DIR}/sys"
+mount -o bind,ro /var/lib/dbus "${CHROOT_DIR}/var/lib/dbus"
+mount -o bind /var/run "${CHROOT_DIR}/var/run"
+mount -o bind /tmp "${CHROOT_DIR}/tmp"
+mount -o bind "${STEAM_APPS}" "${CHROOT_DIR}/home/steam/.local/share/Steam/SteamApps"
+
+#uncoment_to_fail
+
+#linux32 chroot "${CHROOT_DIR}" su steam -c "pulseaudio --start"
+linux32 chroot "${CHROOT_DIR}" su steam -c "env SDL_AUDIODRIVER="pulseaudio" steam && exit"
+
+linux32 chroot "${CHROOT_DIR}" su steam -c "gawk -F "=" '/DBUS_SESSION_BUS_PID/ {print $2}' ~/.dbus/session-bus/* |cat"
+
+#fpid_dbus="${CHROOT_DIR}/var/run/dbus.pid"
+#if [ ! -f "$fpid_dbus" ]; then
+#    #chroot "${CHROOT_DIR}" dbus-daemon --session --print-pid --print-address --fork
+#    chroot "${CHROOT_DIR}" su steam -c "dbus-launch --sh-syntax --exit-with-session"
+#    chroot "${CHROOT_DIR}" su steam -c "steam"
+#fi
+
+#pid_dbus=$(< $fpid_dbus)
+#if [ grep -q "^dbus-daemon" "/proc/$pid_dbus/cmdline" 2>/dev/null ]; then
+#    kill $pid_dbus
+#    rm -f "$fpid_dbus"
+#else
+#    echo "warn: pid_dbus already exists but not match"
+#fi
+
+sync
+if [ x"$ret_pulse_system_wide____" = xtrue ]; then
+    killall pulseaudio  ## _uper_case__[sig]term
+fi
+
+umount "${CHROOT_DIR}/home/steam/.local/share/Steam/SteamApps"
+umount "${CHROOT_DIR}/var/lib/dbus"
+umount "${CHROOT_DIR}/var/run"
+umount "${CHROOT_DIR}/tmp"
+umount "${CHROOT_DIR}/sys"
+umount "${CHROOT_DIR}/proc"
+umount "${CHROOT_DIR}/dev/shm"
+umount "${CHROOT_DIR}/dev/pts"
+## send HUP to proper dbus-lauch :=, steam expec to be relaunched?
+umount "${CHROOT_DIR}/dev"
