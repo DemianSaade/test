@@ -21,13 +21,18 @@ else
     exit 1
 fi
 
-_users=$(users |tr " " "\n" |sort |uniq)
-for user in $_users; do
-    if [ "$user" != "root" ]; then
-        #su $user -c "pulseaudio -k"
-        su $user -c "pasuspender -- tail -f /dev/null"
-    fi
-done
+_exec_per_users () {
+    local _users=$(users |tr " " "\n" |sort |uniq)
+    for user in $_users; do
+        if [ "$user" != "root" ]; then
+            #su $user -c "pulseaudio -k"
+            #su $user -c "pasuspender -- tail -f /dev/null"
+            su $user -c "$1"
+        fi
+    done
+}
+
+_exec_per_users "pasuspender -- tail -f /dev/null &"
 
 ps -u pulse > /dev/null 2>&1
 if [ $? -eq 1 ]; then
@@ -36,6 +41,9 @@ if [ $? -eq 1 ]; then
 else
     ret_pulse_system_wide____="true"
 fi
+
+_exec_per_users "killall -9 tail"
+_exec_per_users "pulseaudio -k"
 
 mount -t devtmpfs -o rw,nosuid,relatime,size=10240k,nr_inodes=503133,mode=755 chudev "${CHROOT_DIR}/dev"
 mount -t devpts -o rw,relatime,gid=5,mode=620,ptmxmode=000 chdevpts "${CHROOT_DIR}/dev/pts"
@@ -71,8 +79,7 @@ linux32 chroot "${CHROOT_DIR}" su steam -c "gawk -F "=" '/DBUS_SESSION_BUS_PID/ 
 
 sync
 if [ x"$ret_pulse_system_wide____" = xtrue ]; then
-    #killall pulseaudio  ## _uper_case__[sig]term
-    killall -9 tail ## _same_as_same__[same]same
+    killall -u pulse pulseaudio  ## _uper_case__[sig]term
 fi
 
 umount "${CHROOT_DIR}/home/steam/.local/share/Steam/SteamApps"
