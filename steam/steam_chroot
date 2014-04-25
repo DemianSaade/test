@@ -58,7 +58,8 @@ mount -o bind "${STEAM_APPS}" "${CHROOT_DIR}/home/steam/.local/share/Steam/Steam
 #uncoment_to_fail
 
 #linux32 chroot "${CHROOT_DIR}" su steam -c "pulseaudio --start"
-linux32 chroot "${CHROOT_DIR}" su steam -c "env SDL_AUDIODRIVER="pulseaudio" steam && exit"
+#env R600_DEBUG=sb,ps,vs STEAM_RUNTIME=1 STEAM_DEBUG=1 LIBGL_DEBUG=verbose SDL_AUDIODRIVER="pulseaudio" MESA_DEBUG=1 steam
+linux32 --32bit --addr-compat-layout chroot "${CHROOT_DIR}" su steam -c "env SDL_AUDIODRIVER="pulseaudio" steam && exit"
 
 linux32 chroot "${CHROOT_DIR}" su steam -c "gawk -F "=" '/DBUS_SESSION_BUS_PID/ {print $2}' ~/.dbus/session-bus/* |cat"
 
@@ -91,4 +92,5 @@ umount "${CHROOT_DIR}/proc"
 umount "${CHROOT_DIR}/dev/shm"
 umount "${CHROOT_DIR}/dev/pts"
 ## send HUP to proper dbus-lauch :=, steam expec to be relaunched?
+## pidof -c ?? sys-process/acct
 umount "${CHROOT_DIR}/dev"
